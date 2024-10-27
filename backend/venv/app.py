@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # Allow CORS globally for all routes and all origins
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Generate or load encryption key
 if not os.path.exists("secret.key"):
@@ -37,17 +37,27 @@ def submit_journal():
         return response
 
     # Handle POST request
-    print(f"Headers received: {request.headers}")
-    data = request.json
-    print(f"Data received: {data}")
-
-    if 'entry' not in data:
-        response = make_response(jsonify({"error": "No journal entry provided"}), 400)
+    try:
+        data = request.get_json(force=True)  # Force Flask to parse as JSON
+        print(f"POST Request Data Received: {data}")  # Debug: Print the received data
+        if data is None:
+            response = make_response(jsonify({"error": "Invalid JSON format or no data provided"}), 400)
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response
+    except Exception as e:
+        print(f"Error parsing JSON: {e}")  # Debug: Log any parsing errors
+        response = make_response(jsonify({"error": "Invalid JSON data"}), 400)
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response
 
     # Encrypt the journal entry
-    encrypted_entry = fernet.encrypt(data['entry'].encode())
+    try:
+        encrypted_entry = fernet.encrypt(data['entry'].encode())
+    except KeyError:
+        print("Error: 'entry' key not found in request data.")  # Debug: Log missing key
+        response = make_response(jsonify({"error": "Missing 'entry' field"}), 400)
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response
 
     # Store with a unique identifier (for simplicity, we'll use a count)
     entry_id = len(journal_entries) + 1
