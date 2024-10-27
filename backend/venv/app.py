@@ -1,12 +1,29 @@
 from flask import Flask, request, jsonify, make_response
+from flask_sqlalchemy import SQLAlchemy
 from cryptography.fernet import Fernet
 from flask_cors import CORS
 import os
 
 app = Flask(__name__)
 
+# Configure Flask app to use SQLite
+app.config['SQLALCHEMY_DATABASE_URI'] ='sqlite:///journal.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 # Allow CORS globally for all routes and all origins
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
+# Set up SQLAlchemy
+db = SQLAlchemy(app)
+
+# Define the JournalEntry model
+class JournalEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.String, nullable=False)
+
+with app.app_context():
+    db.create_all()
 
 # Generate or load encryption key
 if not os.path.exists("secret.key"):
@@ -37,35 +54,42 @@ def submit_journal():
         return response
 
     # Handle POST request
-    try:
-        data = request.get_json(force=True)  # Force Flask to parse as JSON
-        print(f"POST Request Data Received: {data}")  # Debug: Print the received data
-        if data is None:
-            response = make_response(jsonify({"error": "Invalid JSON format or no data provided"}), 400)
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            return response
-    except Exception as e:
-        print(f"Error parsing JSON: {e}")  # Debug: Log any parsing errors
-        response = make_response(jsonify({"error": "Invalid JSON data"}), 400)
+    data = request.get_json(force=True)
+    if not data:
+        response = make_response(jsonify({"error": "Invalid JSON format or no data provided"}), 400)
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response
-
-    # Encrypt the journal entry
+    
+    #Encrypt the journal entry
     try:
         encrypted_entry = fernet.encrypt(data['entry'].encode())
     except KeyError:
-        print("Error: 'entry' key not found in request data.")  # Debug: Log missing key
         response = make_response(jsonify({"error": "Missing 'entry' field"}), 400)
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response
+    
+    # Create and save a new journal entry to the database
+    new_entry = JournalEntry(content=encrypted_entry.decode(), timestamp=data['timestamp'])
+    db.session.add(new_entry)
+    db.session.commit()
 
-    # Store with a unique identifier (for simplicity, we'll use a count)
-    entry_id = len(journal_entries) + 1
-    journal_entries[entry_id] = {"content": encrypted_entry, "timestamp": data['timestamp']}
+    response = make_response(jsonify({"message": "Journal entry submitted successfully", "entry_id": new_entry.id}), 200)
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
 
-    print(f"Entry ID: {entry_id}, Encrypted Entry: {encrypted_entry}")
-
-    response = make_response(jsonify({"message": "Journal entry submitted successfully", "entry_id": entry_id}), 200)
+@app.route('/entries', methods=['Get'])
+def get_entries():
+    # Retrieve all journal entries
+    entries = JournalEntry.query.all()
+    decrypted_entries = [
+        {
+            "id": entry.id,
+            "content": fernet.decrypt(entry.content.encode()).decode(),
+            "timestamp": entry.timestamp
+        }
+        for entry in entries
+    ]
+    response = make_response(jsonify(decrypted_entries), 200)
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
