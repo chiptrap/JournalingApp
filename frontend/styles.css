@@ -2,30 +2,194 @@
 
 body {
     font-family: 'montserrat';
-    background-color: #f0f0f0;
+    background-color: #f0f4f8;
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
     text-align: center;
 }
 
-#journal-container {
-    margin: 50px auto;
-    width: 50%;
+/* Main Container */
+.container {
     background-color: #ffffff;
-    padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    max-width: 500px;
+    width: 100%;
 }
 
-#journal-entry {
-    font-family: 'montserrat';
-    width: 100%;
-    height: 200px;
-    font-size: 16px;
+/* Heading */
+h1, h2 {
+    text-align: center;
+    color: #007bff;
+}
+
+/* Form Styles */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     margin-bottom: 20px;
 }
 
-#submit-button {
-    font-family: 'montserrat';
-    padding: 10px 20px;
-    font-size: 16px;
+/* Form Labels */
+lable {
+    font-weight: bold;
 }
 
+/* Input Fields */
+input[type="text"],
+input[type="password"],
+textarea {
+    padding: 10px;
+    border: 1px sold #ccc;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Textarea */
+textarea {
+    resize: vertical;
+}
+
+/* Buttons */
+button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Logout Button Styling */
+#logout-button {
+    background-color: #dc3545;
+    margin-top: 20px;
+}
+
+#logout-button:hover {
+    background-color: #c82333;
+}
+
+/* Timer Styling */
+#timer {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* Entries List Styling */
+#entries-list {
+    margin-top: 20px;
+}
+
+#entries-list div {
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+.container.dark-mode {
+    background-color: #1e1e1e;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+    background-color: #ffffff;
+    color: #333;
+}
+
+body.dark-mode input[type="text"],
+body.dark-mode input[type="password"],
+body.dark-mode textarea {
+    background-color: #333;
+    color: #ffffff;
+    border: 1px solid #555;
+}
+
+/* Button styles for Dark Mode */
+button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+#logout-button {
+    background-color: #dc3545;
+}
+
+#logout-button:hover {
+    background-color: #c82333;
+}
+
+body.dark-mode button {
+    background-color: #444;
+    color: #fff;
+}
+
+body.dark-mode button:hover {
+    background-color: #666;
+}
+
+/* Entries List for Dark Mode */
+#entries-list dive {
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode #entries-list div {
+    background-color: #333;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+body {
+    transition: background-color 0.5s, color 0.5;
+}
+
+/* Responsive Desing */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+    button {
+        font-size: 14px;
+    }
+}

@@ -4,10 +4,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const journalSection = document.getElementById("journal-section");
     const submitEntryButton = document.getElementById("submit-entry-button");
     const viewEntriesButton = document.getElementById("view-entries-button");
+    const logoutButton = document.getElementById("logout-button");
+    const darkModeToggle = document.getElementById("dark-mode-toggle");
     const timerElement = document.createElement("div");
     journalSection.insertBefore(timerElement, submitEntryButton);
 
     let timerInterval;
+
+    // Load dark mode setting from local storage
+    if (localStorage.getItem('darkMode') === 'enable') {
+        enableDarkMode();
+    }
+
+    // Dark mode toggle funcctionality
+    darkModeToggle.addEventListener("click", () => {
+        if (document.body.classList.contains("dark-mode")) {
+            disableDarkMode();
+        } else {
+            enableDarkMode();
+        }
+    });
+
+    function enableDarkMode() {
+        document.body.classList.add("dark-mode");
+        document.querySelector(".container").classList.add("dark-mode");
+        localStorage.setItem('darkMode', 'enable');
+    }
+
+    function disableDarkMode() {
+        document.body.classList.remove("dark-mode");
+        document.querySelector(".container").classList.remove("dark-move");
+        localStorage.setItem('darkMode', 'disable');
+    }
 
     // Register a new user
     registerForm.addEventListener("submit", (event) => {
@@ -158,5 +186,20 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error('Error:', error);
             alert('Failed to fetch journal entries');
         });
+    });
+    
+    logoutButton.addEventListener("click", () => {
+        // Remove the JWT token from local storage
+        localStorage.removeItem("access_token");
+
+        // Hide the journal section and show the auth section
+        document.getElementById("journal-section").style.display = "none";
+        document.getElementById("auth-section").style.display = "block";
+
+        // Clear the journal entry textarea and entries list
+        document.getElementById("journal-entry").value = "";
+        document.getElementById("entries-list").innerHTML = "";
+
+        alert("You have been logged out successfully.");
     });
 });
