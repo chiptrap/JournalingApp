@@ -1,4 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Initialize the Quill editor as done previously
+    const quill = new Quill('#editor', {
+        theme: 'snow'
+    });
+
     const registerForm = document.getElementById("register-form");
     const loginForm = document.getElementById("login-form");
     const journalSection = document.getElementById("journal-section");
@@ -7,16 +12,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutButton = document.getElementById("logout-button");
     const darkModeToggle = document.getElementById("dark-mode-toggle");
     const timerElement = document.createElement("div");
+    const authSection = document.getElementById("auth-section");
+
     journalSection.insertBefore(timerElement, submitEntryButton);
 
     let timerInterval;
 
     // Load dark mode setting from local storage
-    if (localStorage.getItem('darkMode') === 'enable') {
+    if (localStorage.getItem('darkMode') === 'enabled') {
         enableDarkMode();
     }
 
-    // Dark mode toggle funcctionality
+    // Dark mode toggle functionality
     darkModeToggle.addEventListener("click", () => {
         if (document.body.classList.contains("dark-mode")) {
             disableDarkMode();
@@ -28,13 +35,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function enableDarkMode() {
         document.body.classList.add("dark-mode");
         document.querySelector(".container").classList.add("dark-mode");
-        localStorage.setItem('darkMode', 'enable');
+        localStorage.setItem('darkMode', 'enabled');
     }
 
     function disableDarkMode() {
         document.body.classList.remove("dark-mode");
-        document.querySelector(".container").classList.remove("dark-move");
-        localStorage.setItem('darkMode', 'disable');
+        document.querySelector(".container").classList.remove("dark-mode");
+        localStorage.setItem('darkMode', 'disabled');
     }
 
     // Register a new user
@@ -43,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const username = document.getElementById("register-username").value;
         const password = document.getElementById("register-password").value;
 
-        fetch('http://192.168.1.223:5000/register', {
+        fetch('http://127.0.0.1:5000/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -71,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const username = document.getElementById("login-username").value;
         const password = document.getElementById("login-password").value;
 
-        fetch('http://192.168.1.223:5000/login', {
+        fetch('http://127.0.0.1:5000/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -86,13 +93,9 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .then(data => {
             alert("Login successful");
-            // Save the JWT token for future requests
             localStorage.setItem("access_token", data.access_token);
-            // Show the journal section after successful login
-            document.getElementById("auth-section").style.display = "none";
+            authSection.style.display = "none";
             journalSection.style.display = "block";
-
-            // Start the 10-minute timer
             startTimer();
         })
         .catch(error => {
@@ -101,9 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Function to start the 10-minute timer
     function startTimer() {
-        let timeLeft = 10; // 10 minutes in seconds
+        let timeLeft = 600;
         submitEntryButton.disabled = true;
 
         timerInterval = setInterval(() => {
@@ -114,20 +116,20 @@ document.addEventListener("DOMContentLoaded", () => {
             if (timeLeft === 0) {
                 clearInterval(timerInterval);
                 timerElement.textContent = "You can now submit your entry.";
-                submitEntryButton.disabled = false; // Enable submit button after time runs out
+                submitEntryButton.disabled = false;
             }
-            
             timeLeft--;
         }, 1000);
     }
 
     // Submit a journal entry
     submitEntryButton.addEventListener("click", () => {
-        const entryContent = document.getElementById("journal-entry").value;
+        // Get the content from the Quill editor
+        const entryContent = quill.root.innerHTML;
         const timestamp = new Date().toISOString();
         const token = localStorage.getItem("access_token");
 
-        fetch('http://192.168.1.223:5000/submit', {
+        fetch('http://127.0.0.1:5000/submit', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -143,8 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .then(data => {
             alert("Journal entry submitted successfully");
-            document.getElementById("journal-entry").value = ""; // Clear the textarea after successful submission
-            // Restart the timer for a new entry
+            quill.setContents([]); // Clear the editor after submission
             startTimer();
         })
         .catch(error => {
@@ -157,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
     viewEntriesButton.addEventListener("click", () => {
         const token = localStorage.getItem("access_token");
 
-        fetch('http://192.168.1.223:5000/entries', {
+        fetch('http://127.0.0.1:5000/entries', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -171,12 +172,22 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .then(data => {
             const entriesList = document.getElementById("entries-list");
-            entriesList.innerHTML = ""; // Clear the list before displaying new entries
+            entriesList.innerHTML = "";
             data.forEach(entry => {
+                const entryDate = new Date(entry.timestamp);
+                const formattedDate = entryDate.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    hour12: true
+                });
+
                 const entryElement = document.createElement("div");
                 entryElement.innerHTML = `
-                    <p><strong>Timestamp:</strong> ${entry.timestamp}</p>
-                    <p><strong>Content:</strong> ${entry.content}</p>
+                    <p><strong>Timestamp:</strong> ${formattedDate}</p>
+                    <div><strong>Content:</strong> ${entry.content}</div>
                     <hr>
                 `;
                 entriesList.appendChild(entryElement);
@@ -187,19 +198,15 @@ document.addEventListener("DOMContentLoaded", () => {
             alert('Failed to fetch journal entries');
         });
     });
-    
+
+    // Logout functionality
     logoutButton.addEventListener("click", () => {
-        // Remove the JWT token from local storage
         localStorage.removeItem("access_token");
-
-        // Hide the journal section and show the auth section
-        document.getElementById("journal-section").style.display = "none";
-        document.getElementById("auth-section").style.display = "block";
-
-        // Clear the journal entry textarea and entries list
-        document.getElementById("journal-entry").value = "";
+        journalSection.style.display = "none";
+        authSection.style.display = "block";
+        quill.setContents([]);
+        timerElement.textContent = "";
         document.getElementById("entries-list").innerHTML = "";
-
         alert("You have been logged out successfully.");
     });
 });
